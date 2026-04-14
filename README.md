@@ -1,5 +1,13 @@
 # QR-Transformer
 
+## 在线体验
+
+**立即打开：** [**https://qrtransformer-production.up.railway.app**](https://qrtransformer-production.up.railway.app)
+
+浏览器访问即可使用，无需安装。若解析失败，页面会提供参考示意。
+
+---
+
 ## 项目介绍
 
 本项目能够为你将**活动二维码**转换成**签到二维码**，在签到开始时即可用于**签到、签退**等流程。
@@ -8,25 +16,30 @@
 
 ## 使用提示：如何取得待转换的二维码
 
-请在志愿服务等活动平台的**活动详情**页中，按下图方式找到**活动二维码**（截图或保存图片），再在本站上传，即可完成转换。
+请在志愿服务等活动平台的**活动详情**页中，按下图方式找到**活动二维码**（截图或保存图片），再回到上方 [**在线体验**](#在线体验) 地址上传，即可完成转换。
 
-**方式一：** 底部导航进入「二维码」，在页面中央出现活动二维码。
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <strong>方式一</strong><br/>
+      底部导航进入「二维码」，在页面中央出现活动二维码。
+    </td>
+    <td align="center" width="50%">
+      <strong>方式二</strong><br/>
+      点击活动页上的二维码入口（如「活动二维码」），按提示展示后截图或保存。
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/image1.png" alt="方式一：底部进入二维码" width="380" />
+    </td>
+    <td align="center">
+      <img src="docs/image2.png" alt="方式二：活动二维码入口" width="380" />
+    </td>
+  </tr>
+</table>
 
-![方式一：底部进入二维码](docs/image1.png)
-
-**方式二：** 点击活动页上的二维码入口（如「活动二维码」），按提示展示二维码后截图或保存。
-
-![方式二：活动二维码入口](docs/image2.png)
-
-取得清晰、可扫描的二维码图片后，打开下方在线地址，在网页中**上传**即可生成签到用二维码并支持下载。
-
----
-
-## 在线使用（Railway）
-
-**网站地址：** [https://qrtransformer-production.up.railway.app](https://qrtransformer-production.up.railway.app)
-
-浏览器打开即可使用，无需安装。若解析失败，页面会提供参考示意。
+请尽量使用**清晰、完整**的二维码截图，便于识别与转换。
 
 ---
 
@@ -60,7 +73,7 @@ npm run dev
 
 1. 将代码推送到 GitHub。  
 2. 在 [Railway](https://railway.app/) **New Project → Deploy from GitHub**，选择本仓库，使用 **Dockerfile** 构建。  
-3. 在 **Networking** 中 **Generate Domain** 得到公网 HTTPS 地址（当前线上示例见上文「在线使用」）。
+3. 在 **Networking** 中 **Generate Domain** 得到公网 HTTPS 地址。
 
 **说明：** 默认 SQLite 在容器内；无持久卷时重新部署可能清空历史记录。需要长期保留数据时请为服务挂载 Volume 并配置 `DATABASE_URL`，或改用托管数据库。
 
