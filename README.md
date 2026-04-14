@@ -12,6 +12,12 @@
 - Node.js 18+
 - npm
 
+## 仓库与敏感信息
+
+- **应提交**：`client/`、`server/` 源码、`package.json` / `package-lock.json`、Prisma `schema` 与 `migrations/`、`client/public/` 静态资源等。
+- **勿提交**：`server/.env`（密钥与本地配置）、本地 SQLite `*.db`、各目录 `node_modules/`、`dist/`。本地可从 [`server/.env.example`](server/.env.example) 复制为 `.env`。
+- 若远程仓库里**只有 README**，通常是尚未执行 `git add` 添加整个项目目录，并非被 `.gitignore` 屏蔽了全部代码。
+
 ## 首次安装
 
 在项目根目录：

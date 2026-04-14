@@ -1,0 +1,88 @@
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
+import type { ProcessingLog } from "../api/types";
+
+type Props = {
+  logs: ProcessingLog[];
+  loading?: boolean;
+};
+
+function HistoryQr({ payload }: { payload: string }) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(payload, {
+      width: 160,
+      margin: 1,
+      errorCorrectionLevel: "M",
+    })
+      .then((url) => {
+        if (!cancelled) setDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [payload]);
+
+  if (!dataUrl) {
+    return (
+      <div className="flex h-[160px] w-[160px] items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-400 dark:bg-zinc-800">
+        …
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={dataUrl}
+      alt=""
+      width={160}
+      height={160}
+      className="rounded-lg border border-zinc-200 dark:border-zinc-700"
+    />
+  );
+}
+
+export function HistoryList({ logs, loading }: Props) {
+  if (loading && logs.length === 0) {
+    return (
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <p className="text-sm text-zinc-500">正在加载记录…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+          历史记录
+        </h2>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          仅展示二维码与时间，最多 50 条
+        </p>
+      </div>
+      {logs.length === 0 ? (
+        <p className="text-sm text-zinc-500">暂无记录</p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          {logs.map((log) => (
+            <li key={log.id} className="flex flex-col items-center gap-2">
+              <HistoryQr payload={log.finalContent} />
+              <time
+                className="text-xs text-zinc-500"
+                dateTime={log.createdAt}
+              >
+                {new Date(log.createdAt).toLocaleString()}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
