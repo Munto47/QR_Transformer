@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  fetchProcessingLogs,
-  transformImage,
-} from "./api/qr";
+import { fetchProcessingLogs, transformImage } from "./api/qr";
 import type { ProcessingLog } from "./api/types";
+import { HeaderBar } from "./components/HeaderBar";
+import { HeroSection } from "./components/HeroSection";
 import { HistoryList } from "./components/HistoryList";
 import { QrDisplay } from "./components/QrDisplay";
 import { UploadZone } from "./components/UploadZone";
+
+const THEME_KEY = "qr-transformer-theme";
+
+function readStoredTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "dark";
+  const v = localStorage.getItem(THEME_KEY);
+  if (v === "light" || v === "dark") return v;
+  return "dark";
+}
 
 export default function App() {
   const [finalContent, setFinalContent] = useState<string | null>(null);
@@ -14,8 +22,23 @@ export default function App() {
   const [logsLoading, setLogsLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** 仅在上传解析失败时展示参考图 */
   const [showParseReference, setShowParseReference] = useState(false);
+  /** 当前任务原图本地预览（object URL） */
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">(readStoredTheme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  const revokePreview = useCallback((url: string | null) => {
+    if (url) URL.revokeObjectURL(url);
+  }, []);
+
+  useEffect(() => {
+    return () => revokePreview(previewUrl);
+  }, [previewUrl, revokePreview]);
 
   const loadLogs = useCallback(async () => {
     try {
@@ -36,7 +59,12 @@ export default function App() {
   const handleFile = async (file: File) => {
     setError(null);
     setShowParseReference(false);
+    setFinalContent(null);
     setBusy(true);
+
+    const nextUrl = URL.createObjectURL(file);
+    setPreviewUrl(nextUrl);
+
     try {
       const res = await transformImage(file);
       if (res.success) {
@@ -51,47 +79,68 @@ export default function App() {
     }
   };
 
+  const toggleTheme = () =>
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/80">
-        <div className="mx-auto max-w-5xl px-4 py-5">
-          <h1 className="text-2xl font-bold tracking-tight">QR_Transfomer</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <HeaderBar theme={theme} onToggleTheme={toggleTheme} />
 
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
-        {error && (
-          <div
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/50 dark:text-red-100"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
+      <main>
+        <HeroSection />
 
-        {showParseReference && (
-          <section
-            className="overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
-            aria-label="解析失败参考示意"
-          >
-            <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-              解析失败时可参考下图示意
-            </p>
-            <div className="flex justify-center">
-              <img
-                src="/image.png"
-                alt=""
-                className="max-h-[min(70vh,640px)] w-auto max-w-full rounded-lg object-contain"
-              />
+        <div className="mx-auto max-w-5xl space-y-10 px-5 pb-16 md:px-8">
+          {error && (
+            <div
+              className="rounded-2xl border border-red-200/90 bg-red-50/95 px-4 py-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100"
+              role="alert"
+            >
+              {error}
             </div>
-          </section>
-        )}
+          )}
 
-        <UploadZone onFile={handleFile} disabled={busy} />
+          {showParseReference && (
+            <section
+              className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white/80 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]"
+              aria-label="解析失败参考示意"
+            >
+              <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                解析失败时可参考下图示意
+              </p>
+              <div className="flex justify-center">
+                <img
+                  src="/image.png"
+                  alt=""
+                  className="max-h-[min(70vh,640px)] w-auto max-w-full rounded-xl object-contain"
+                />
+              </div>
+            </section>
+          )}
 
-        <QrDisplay payload={finalContent} />
+          {/* 主操作区：无结果或未在处理中时显示大上传区；处理中同区变为 Loading */}
+          {!finalContent && (
+            <UploadZone
+              onFile={handleFile}
+              disabled={busy}
+              busy={busy}
+              previewUrl={previewUrl}
+            />
+          )}
 
-        <HistoryList logs={logs} loading={logsLoading} />
+          <QrDisplay payload={finalContent} originalSrc={previewUrl} />
+
+          {/* 已有结果后：紧凑上传入口 */}
+          {finalContent && !busy && (
+            <UploadZone
+              variant="compact"
+              onFile={handleFile}
+              disabled={busy}
+              busy={false}
+            />
+          )}
+
+          <HistoryList logs={logs} loading={logsLoading} />
+        </div>
       </main>
     </div>
   );

@@ -30,7 +30,7 @@ function HistoryQr({ payload }: { payload: string }) {
 
   if (!dataUrl) {
     return (
-      <div className="flex h-[160px] w-[160px] items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-400 dark:bg-zinc-800">
+      <div className="flex h-[160px] w-[160px] items-center justify-center rounded-xl border border-zinc-200/80 bg-zinc-50 text-xs text-zinc-400 dark:border-white/10 dark:bg-zinc-900/40">
         …
       </div>
     );
@@ -42,7 +42,7 @@ function HistoryQr({ payload }: { payload: string }) {
       alt=""
       width={160}
       height={160}
-      className="rounded-lg border border-zinc-200 dark:border-zinc-700"
+      className="rounded-xl border border-zinc-200/80 dark:border-white/10"
     />
   );
 }
@@ -50,16 +50,16 @@ function HistoryQr({ payload }: { payload: string }) {
 export function HistoryList({ logs, loading }: Props) {
   if (loading && logs.length === 0) {
     return (
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+      <section className="rounded-2xl border border-zinc-200/90 bg-white/70 p-5 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]">
         <p className="text-sm text-zinc-500">正在加载记录…</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+    <section className="rounded-2xl border border-zinc-200/90 bg-white/70 p-5 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
           历史记录
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -78,12 +78,12 @@ export function HistoryList({ logs, loading }: Props) {
                   alt=""
                   width={160}
                   height={160}
-                  className="h-[160px] w-[160px] rounded-lg border border-zinc-200 object-contain dark:border-zinc-700"
+                  className="h-[160px] w-[160px] rounded-xl border border-zinc-200/80 object-contain dark:border-white/10"
                 />
                 <HistoryQr payload={log.finalContent} />
               </div>
               <time
-                className="text-xs text-zinc-500"
+                className="text-xs text-zinc-500 dark:text-zinc-400"
                 dateTime={log.createdAt}
               >
                 {new Date(log.createdAt).toLocaleString()}
