@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+.git
+.gitignore
+*.db
+*.db-journal
+.env
+.env.*
+image.png
+README.md
+.cursor
+**/.DS_Store

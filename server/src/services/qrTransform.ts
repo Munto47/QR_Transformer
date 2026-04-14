@@ -33,6 +33,40 @@ const FINAL_TEMPLATE = {
   url: "/pages/home/recommendation/eventDetails",
 } as const;
 
+/**
+ * 若二维码已是业务 JSON 且 type 为 1，则仅将 type 改为 2 后输出（与 activityId 模板流程互斥）。
+ */
+function tryUpgradeBusinessTypePayload(
+  rawContent: string,
+  obj: Record<string, unknown>
+): TransformSuccess | null {
+  const typeVal = obj.type;
+  const isType1 = typeVal === 1 || typeVal === "1";
+
+  if (!isType1) return null;
+
+  const businessId = obj.businessId;
+  if (businessId === undefined || businessId === null) return null;
+
+  const extractedId =
+    typeof businessId === "string"
+      ? businessId
+      : typeof businessId === "number" || typeof businessId === "boolean"
+        ? String(businessId)
+        : "";
+
+  if (!extractedId) return null;
+
+  const finalObject: Record<string, unknown> = { ...obj, type: 2 };
+
+  return {
+    rawContent,
+    extractedId,
+    finalObject,
+    finalContent: JSON.stringify(finalObject),
+  };
+}
+
 export async function transformQrImage(buffer: Buffer): Promise<TransformSuccess> {
   let image;
   try {
@@ -86,7 +120,14 @@ export async function transformQrImage(buffer: Buffer): Promise<TransformSuccess
     );
   }
 
-  const activityId = (parsed as Record<string, unknown>).activityId;
+  const obj = parsed as Record<string, unknown>;
+
+  const businessUpgrade = tryUpgradeBusinessTypePayload(rawContent, obj);
+  if (businessUpgrade) {
+    return businessUpgrade;
+  }
+
+  const activityId = obj.activityId;
   if (activityId === undefined || activityId === null) {
     throw new QrTransformError(
       "MISSING_ACTIVITY_ID",
