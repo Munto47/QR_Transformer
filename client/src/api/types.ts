@@ -19,6 +19,9 @@ export type ProcessingLog = {
   extractedId: string;
   finalContent: string;
   createdAt: string;
+  mimeType: string;
+  originalName: string | null;
+  sizeBytes: number;
 };
 
 export type LogsResponse = {

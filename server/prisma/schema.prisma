@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,4 +13,9 @@ model ProcessingLog {
   extractedId  String
   finalContent String
   createdAt    DateTime @default(now())
+
+  imageBytes   Bytes
+  mimeType     String
+  originalName String?
+  sizeBytes    Int
 }

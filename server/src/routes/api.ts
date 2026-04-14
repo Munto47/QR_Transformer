@@ -75,6 +75,10 @@ apiRouter.post(
           rawContent: out.rawContent,
           extractedId: out.extractedId,
           finalContent: out.finalContent,
+          imageBytes: new Uint8Array(file.buffer),
+          mimeType: file.mimetype,
+          originalName: file.originalname || null,
+          sizeBytes: file.size,
         },
       });
 
@@ -98,9 +102,43 @@ apiRouter.get("/processing-logs", async (_req: Request, res: Response) => {
     const logs = await prisma.processingLog.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
+      select: {
+        id: true,
+        rawContent: true,
+        extractedId: true,
+        finalContent: true,
+        createdAt: true,
+        mimeType: true,
+        originalName: true,
+        sizeBytes: true,
+      },
     });
     res.json({ success: true, data: logs });
   } catch (e) {
     handleError(e, res);
   }
 });
+
+apiRouter.get(
+  "/processing-logs/:id/image",
+  async (req: Request, res: Response) => {
+    try {
+      const log = await prisma.processingLog.findUnique({
+        where: { id: req.params.id },
+        select: { imageBytes: true, mimeType: true },
+      });
+      if (!log) {
+        res.status(404).json({
+          success: false,
+          error: { code: "NOT_FOUND", message: "记录不存在" },
+        });
+        return;
+      }
+      res.setHeader("Content-Type", log.mimeType);
+      res.setHeader("Cache-Control", "private, max-age=3600");
+      res.send(Buffer.from(log.imageBytes));
+    } catch (e) {
+      handleError(e, res);
+    }
+  }
+);

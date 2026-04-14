@@ -63,7 +63,7 @@ export function HistoryList({ logs, loading }: Props) {
           历史记录
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          仅展示二维码与时间，最多 50 条
+          含上传原图与转换结果，最多 50 条
         </p>
       </div>
       {logs.length === 0 ? (
@@ -72,7 +72,16 @@ export function HistoryList({ logs, loading }: Props) {
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {logs.map((log) => (
             <li key={log.id} className="flex flex-col items-center gap-2">
-              <HistoryQr payload={log.finalContent} />
+              <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start">
+                <img
+                  src={`/api/processing-logs/${log.id}/image`}
+                  alt=""
+                  width={160}
+                  height={160}
+                  className="h-[160px] w-[160px] rounded-lg border border-zinc-200 object-contain dark:border-zinc-700"
+                />
+                <HistoryQr payload={log.finalContent} />
+              </div>
               <time
                 className="text-xs text-zinc-500"
                 dateTime={log.createdAt}

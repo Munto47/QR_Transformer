@@ -46,7 +46,7 @@
 ## 技术栈
 
 - 前端：`client/` — React (Vite)、Tailwind CSS、Axios、`qrcode`
-- 后端：`server/` — Node.js (Express)、Prisma、SQLite、jimp、jsqr、multer
+- 后端：`server/` — Node.js (Express)、Prisma、PostgreSQL、jimp、jsqr、multer
 
 ---
 
@@ -63,7 +63,7 @@ npm run dev
 
 根目录 `npm run dev` 会同时启动前端（默认 `http://localhost:5173`）与后端 API（默认 `3100`）。若端口冲突，可在 `server/.env` 修改 `PORT`，并在 `client/.env.local` 设置 `VITE_API_PROXY_TARGET` 指向同一后端地址。
 
-首次使用需在 `server` 目录执行数据库迁移（见上）。勿将 `server/.env`、本地 `*.db` 提交到 Git；可参考 [`server/.env.example`](server/.env.example)。
+首次使用需准备 **PostgreSQL**（本地安装或 Docker），在 `server` 目录配置 `DATABASE_URL` 后执行 `npx prisma migrate dev`（见上）。勿将 `server/.env` 提交到 Git；可参考 [`server/.env.example`](server/.env.example)。
 
 ---
 
@@ -73,15 +73,16 @@ npm run dev
 
 1. 将代码推送到 GitHub。  
 2. 在 [Railway](https://railway.app/) **New Project → Deploy from GitHub**，选择本仓库，使用 **Dockerfile** 构建。  
-3. 在 **Networking** 中 **Generate Domain** 得到公网 HTTPS 地址。
+3. 在同一项目中 **New → Database → PostgreSQL** 创建数据库；在 Web 服务的 **Variables** 里为 **`DATABASE_URL`** 选择 **Reference** 指向 Postgres 插件提供的变量（与镜像内默认无关，须显式引用）。  
+4. 在 **Networking** 中 **Generate Domain** 得到公网 HTTPS 地址。
 
-**说明：** 默认 SQLite 在容器内；无持久卷时重新部署可能清空历史记录。需要长期保留数据时请为服务挂载 Volume 并配置 `DATABASE_URL`，或改用托管数据库。
+**说明：** 生产环境依赖 PostgreSQL；处理记录与上传原图均持久化在数据库中。未配置 `DATABASE_URL` 时容器无法完成迁移与启动。
 
 ---
 
 ## 自建服务器（概要）
 
-在机器上安装 Node 后：`client` / `server` 分别安装依赖 → `npx prisma migrate deploy` → `npm run build`（根目录或分目录）→ 设置 `NODE_ENV=production` 后执行 `server` 的 `npm start`（会执行迁移并启动）。生产环境 Express 会托管 `client/dist` 与 `/api`；亦可配合 Nginx 反代与 HTTPS。
+在机器上安装 Node 与 PostgreSQL 后：配置 `DATABASE_URL` → `client` / `server` 分别安装依赖 → `npx prisma migrate deploy` → `npm run build`（根目录或分目录）→ 设置 `NODE_ENV=production` 后执行 `server` 的 `npm start`（会执行迁移并启动）。生产环境 Express 会托管 `client/dist` 与 `/api`；亦可配合 Nginx 反代与 HTTPS。
 
 ---
 
@@ -90,7 +91,8 @@ npm run dev
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | `POST` | `/api/transform` | `multipart/form-data`，字段名 `image`，上传二维码图片 |
-| `GET` | `/api/processing-logs` | 最近处理记录 |
+| `GET` | `/api/processing-logs` | 最近处理记录（不含图片二进制；含 `mimeType`、`sizeBytes` 等元数据） |
+| `GET` | `/api/processing-logs/:id/image` | 对应记录的上传原图（`Content-Type` 为保存的 MIME） |
 | `GET` | `/health` | 健康检查 |
 
 ---

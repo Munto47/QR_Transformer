@@ -22,8 +22,7 @@ RUN npm run build --prefix client && npm run build --prefix server
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-# 平台会注入 PORT；SQLite 路径（无持久卷时容器重建会清空库，见 README）
-ENV DATABASE_URL=file:/app/server/prisma/prod.db
+# DATABASE_URL 须由运行环境提供（如 Railway PostgreSQL 插件变量），勿在镜像内写死
 
 WORKDIR /app/server
 
