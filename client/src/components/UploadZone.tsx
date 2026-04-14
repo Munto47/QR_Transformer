@@ -146,9 +146,7 @@ export function UploadZone({
                 strokeWidth={1.75}
                 aria-hidden
               />
-              <span>
-                您的文件通过端到端加密传输，且处理后立即销毁，绝不存储。
-              </span>
+              <span>您的文件通过端到端加密传输。</span>
             </div>
           </motion.div>
         )}

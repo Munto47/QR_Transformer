@@ -48,6 +48,9 @@ function HistoryQr({ payload }: { payload: string }) {
 }
 
 export function HistoryList({ logs, loading }: Props) {
+  /** 接口按 createdAt 降序，取最新 2 条 */
+  const recent = logs.slice(0, 2);
+
   if (loading && logs.length === 0) {
     return (
       <section className="rounded-2xl border border-zinc-200/90 bg-white/70 p-5 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04]">
@@ -63,25 +66,16 @@ export function HistoryList({ logs, loading }: Props) {
           历史记录
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          含上传原图与转换结果，最多 50 条
+          仅展示最近 2 条生成结果
         </p>
       </div>
-      {logs.length === 0 ? (
+      {recent.length === 0 ? (
         <p className="text-sm text-zinc-500">暂无记录</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {logs.map((log) => (
+        <ul className="grid grid-cols-2 gap-6">
+          {recent.map((log) => (
             <li key={log.id} className="flex flex-col items-center gap-2">
-              <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-start">
-                <img
-                  src={`/api/processing-logs/${log.id}/image`}
-                  alt=""
-                  width={160}
-                  height={160}
-                  className="h-[160px] w-[160px] rounded-xl border border-zinc-200/80 object-contain dark:border-white/10"
-                />
-                <HistoryQr payload={log.finalContent} />
-              </div>
+              <HistoryQr payload={log.finalContent} />
               <time
                 className="text-xs text-zinc-500 dark:text-zinc-400"
                 dateTime={log.createdAt}
