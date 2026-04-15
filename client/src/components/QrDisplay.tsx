@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -8,14 +8,18 @@ type Props = {
   payload: string | null;
   /** 用户上传的原图预览（object URL） */
   originalSrc?: string | null;
+  /** 点击「大家一起用」，打开页面顶部投稿表单 */
+  onShareTogether?: () => void;
 };
 
 function QrInner({
   payload,
   originalSrc,
+  onShareTogether,
 }: {
   payload: string;
   originalSrc: string | null;
+  onShareTogether?: () => void;
 }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +100,28 @@ function QrInner({
                 height={280}
                 className="rounded-xl border border-zinc-200/90 dark:border-zinc-700/80"
               />
-              <a
-                href={dataUrl}
-                download="qr-transformer.png"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-500"
-              >
-                <Download className="h-4 w-4" strokeWidth={2} />
-                免费下载
-              </a>
+              <div className="flex w-full max-w-[min(100%,360px)] flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+                <a
+                  href={dataUrl}
+                  download="qr-transformer.png"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-500 sm:min-w-[140px]"
+                >
+                  <Download className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  免费下载
+                </a>
+                {onShareTogether && (
+                  <button
+                    type="button"
+                    onClick={onShareTogether}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-6 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50 dark:border-indigo-500/40 dark:bg-zinc-900/80 dark:text-indigo-300 dark:hover:bg-indigo-950/50 sm:min-w-[140px]"
+                  >
+                    <Users className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    大家一起用
+                  </button>
+                )}
+              </div>
               <p className="text-center text-xs text-zinc-500">
-                保存为 PNG 到本地设备
+                保存为 PNG 到本地设备；投稿后出现在右侧近期活动
               </p>
             </>
           ) : (
@@ -120,7 +136,11 @@ function QrInner({
 /**
  * 结果区：有 payload 时展示原图与新二维码对比；无 payload 时不渲染占位（由页面其它区域承担引导）
  */
-export function QrDisplay({ payload, originalSrc = null }: Props) {
+export function QrDisplay({
+  payload,
+  originalSrc = null,
+  onShareTogether,
+}: Props) {
   if (!payload) return null;
 
   return (
@@ -129,7 +149,11 @@ export function QrDisplay({ payload, originalSrc = null }: Props) {
       aria-label="转换结果"
     >
       <h2 className="mb-6 text-sm font-medium text-zinc-500">转换结果</h2>
-      <QrInner payload={payload} originalSrc={originalSrc} />
+      <QrInner
+        payload={payload}
+        originalSrc={originalSrc}
+        onShareTogether={onShareTogether}
+      />
     </section>
   );
 }

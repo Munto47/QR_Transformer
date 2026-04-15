@@ -33,6 +33,8 @@ export type ActivityQr = {
   id: string;
   activityName: string;
   activityAt: string;
+  school: string;
+  signInAt: string | null;
   createdAt: string;
   mimeType: string;
   originalName: string | null;

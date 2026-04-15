@@ -5,6 +5,7 @@ import { loginAdmin } from "../api/admin";
 import { createActivityQr } from "../api/activityQr";
 import { clearAdminToken } from "../api/authStorage";
 import { getErrorMessage } from "../api/qr";
+import { DEFAULT_ACTIVITY_SCHOOL, SCHOOL_OPTIONS } from "../constants/schools";
 
 type Props = {
   /** 由父组件与 sessionStorage 同步 */
@@ -26,6 +27,8 @@ export function AdminToolbar({
 
   const [activityName, setActivityName] = useState("");
   const [activityAt, setActivityAt] = useState("");
+  const [school, setSchool] = useState<string>(DEFAULT_ACTIVITY_SCHOOL);
+  const [signInAt, setSignInAt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const closeLogin = () => {
@@ -38,6 +41,8 @@ export function AdminToolbar({
     setSubmitOpen(false);
     setActivityName("");
     setActivityAt("");
+    setSchool(DEFAULT_ACTIVITY_SCHOOL);
+    setSignInAt("");
     setImageFile(null);
     setError(null);
   };
@@ -88,11 +93,22 @@ export function AdminToolbar({
       setError("请选择二维码图片");
       return;
     }
+    let signInIso: string | null = null;
+    if (signInAt) {
+      const s = new Date(signInAt);
+      if (Number.isNaN(s.getTime())) {
+        setError("签到开始时间无效");
+        return;
+      }
+      signInIso = s.toISOString();
+    }
     setBusy(true);
     try {
       await createActivityQr({
         activityName: activityName.trim(),
         activityAt: iso,
+        school,
+        signInAt: signInIso,
         image: imageFile,
       });
       onActivityCreated();
@@ -270,6 +286,41 @@ export function AdminToolbar({
                     type="datetime-local"
                     value={activityAt}
                     onChange={(e) => setActivityAt(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="activity-school"
+                    className="block text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                  >
+                    学校
+                  </label>
+                  <select
+                    id="activity-school"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
+                  >
+                    {SCHOOL_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="activity-sign-in"
+                    className="block text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                  >
+                    活动签到开始时间（选填）
+                  </label>
+                  <input
+                    id="activity-sign-in"
+                    type="datetime-local"
+                    value={signInAt}
+                    onChange={(e) => setSignInAt(e.target.value)}
                     className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
                   />
                 </div>

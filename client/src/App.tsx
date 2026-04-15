@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { subscribeAdminUnauthorized } from "./api/client";
 import { getAdminToken } from "./api/authStorage";
 import { fetchProcessingLogs, getErrorMessage, transformImage } from "./api/qr";
@@ -9,6 +10,7 @@ import { HeaderBar } from "./components/HeaderBar";
 import { HeroSection } from "./components/HeroSection";
 import { HistoryList } from "./components/HistoryList";
 import { QrDisplay } from "./components/QrDisplay";
+import { ShareTogetherForm } from "./components/ShareTogetherForm";
 import { UploadZone } from "./components/UploadZone";
 
 const THEME_KEY = "qr-transformer-theme";
@@ -34,6 +36,18 @@ export default function App() {
     () => !!getAdminToken()
   );
   const [activityQrRefresh, setActivityQrRefresh] = useState(0);
+  const [showShareTogether, setShowShareTogether] = useState(false);
+  const shareTogetherAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  const openShareTogether = useCallback(() => {
+    setShowShareTogether(true);
+    requestAnimationFrame(() => {
+      shareTogetherAnchorRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, []);
 
   useEffect(() => {
     return subscribeAdminUnauthorized(() => setAdminLoggedIn(false));
@@ -111,6 +125,18 @@ export default function App() {
       />
 
       <main>
+        <div ref={shareTogetherAnchorRef} className="scroll-mt-16" />
+        <AnimatePresence>
+          {showShareTogether && finalContent && (
+            <ShareTogetherForm
+              key="share-together"
+              qrPayload={finalContent}
+              onClose={() => setShowShareTogether(false)}
+              onSuccess={() => setActivityQrRefresh((n) => n + 1)}
+            />
+          )}
+        </AnimatePresence>
+
         <HeroSection />
 
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-10">
@@ -152,7 +178,11 @@ export default function App() {
             />
           )}
 
-          <QrDisplay payload={finalContent} originalSrc={previewUrl} />
+          <QrDisplay
+            payload={finalContent}
+            originalSrc={previewUrl}
+            onShareTogether={openShareTogether}
+          />
 
           {/* 已有结果后：紧凑上传入口 */}
           {finalContent && !busy && (
