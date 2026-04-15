@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { upload } from "../middleware/upload.js";
+import { resolveActivityStoredImage } from "../services/activityQrImage.js";
 
 export const activityQrRoutes = Router();
 
@@ -90,14 +91,16 @@ activityQrRoutes.post(
         return;
       }
 
+      const stored = await resolveActivityStoredImage(file);
+
       const row = await prisma.activityQr.create({
         data: {
           activityName,
           activityAt,
-          imageBytes: new Uint8Array(file.buffer),
-          mimeType: file.mimetype,
+          imageBytes: Buffer.from(stored.imageBytes),
+          mimeType: stored.mimeType,
           originalName: file.originalname || null,
-          sizeBytes: file.size,
+          sizeBytes: stored.sizeBytes,
         },
         select: {
           id: true,
@@ -110,7 +113,10 @@ activityQrRoutes.post(
         },
       });
 
-      res.json({ success: true, data: row });
+      res.json({
+        success: true,
+        data: { ...row, usedTransform: stored.usedTransform },
+      });
     } catch (e) {
       console.error(e);
       res.status(500).json({

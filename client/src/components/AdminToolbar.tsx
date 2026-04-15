@@ -45,6 +45,10 @@ export function AdminToolbar({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!password.trim()) {
+      setError("请输入密码");
+      return;
+    }
     setBusy(true);
     try {
       await loginAdmin(password);
@@ -67,8 +71,8 @@ export function AdminToolbar({
   const handleSubmitActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!imageFile) {
-      setError("请选择二维码图片");
+    if (!activityName.trim()) {
+      setError("请填写活动名称");
       return;
     }
     if (!activityAt) {
@@ -80,10 +84,14 @@ export function AdminToolbar({
       setError("活动时间无效");
       return;
     }
+    if (!imageFile) {
+      setError("请选择二维码图片");
+      return;
+    }
     setBusy(true);
     try {
       await createActivityQr({
-        activityName: activityName.trim() || "未命名活动",
+        activityName: activityName.trim(),
         activityAt: iso,
         image: imageFile,
       });
@@ -154,6 +162,7 @@ export function AdminToolbar({
               exit={{ opacity: 0, y: 6, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
               onSubmit={handleLogin}
+              noValidate
               className="w-full max-w-sm rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-zinc-900"
               onClick={(e) => e.stopPropagation()}
             >
@@ -174,7 +183,6 @@ export function AdminToolbar({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
-                  required
                 />
               </label>
               {error && (
@@ -223,6 +231,7 @@ export function AdminToolbar({
               exit={{ opacity: 0, y: 6, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
               onSubmit={handleSubmitActivity}
+              noValidate
               className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-zinc-900"
               onClick={(e) => e.stopPropagation()}
             >
@@ -240,7 +249,6 @@ export function AdminToolbar({
                   onChange={(e) => setActivityName(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
                   placeholder="例如：春季分享会"
-                  required
                 />
               </label>
               <label className="mt-3 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -250,7 +258,6 @@ export function AdminToolbar({
                   value={activityAt}
                   onChange={(e) => setActivityAt(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100"
-                  required
                 />
               </label>
               <label className="mt-3 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
@@ -262,7 +269,6 @@ export function AdminToolbar({
                     setImageFile(e.target.files?.[0] ?? null)
                   }
                   className="mt-1.5 w-full text-sm text-zinc-700 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-zinc-800 dark:text-zinc-300 dark:file:bg-white/10 dark:file:text-zinc-200"
-                  required
                 />
               </label>
               {error && (
