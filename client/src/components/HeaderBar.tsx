@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ExternalLink, Moon, Sun } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -7,12 +8,14 @@ const GITHUB_HREF = "https://github.com";
 type Props = {
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  /** 顶栏右侧额外区域（如管理员入口），位于 GitHub 与主题切换左侧 */
+  trailing?: ReactNode;
 };
 
 /**
  * 顶栏：品牌名 + GitHub + 主题切换（暗黑优先）
  */
-export function HeaderBar({ theme, onToggleTheme }: Props) {
+export function HeaderBar({ theme, onToggleTheme, trailing }: Props) {
   const isDark = theme === "dark";
 
   return (
@@ -22,11 +25,12 @@ export function HeaderBar({ theme, onToggleTheme }: Props) {
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/75 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70"
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4 md:px-8">
         <span className="text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           QR_Transformer
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          {trailing}
           <a
             href={GITHUB_HREF}
             target="_blank"

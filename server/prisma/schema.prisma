@@ -19,3 +19,15 @@ model ProcessingLog {
   originalName String?
   sizeBytes    Int
 }
+
+model ActivityQr {
+  id           String   @id @default(cuid())
+  activityName String
+  activityAt   DateTime
+  createdAt    DateTime @default(now())
+
+  imageBytes   Bytes
+  mimeType     String
+  originalName String?
+  sizeBytes    Int
+}

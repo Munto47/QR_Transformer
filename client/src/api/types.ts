@@ -28,3 +28,13 @@ export type LogsResponse = {
   success: true;
   data: ProcessingLog[];
 };
+
+export type ActivityQr = {
+  id: string;
+  activityName: string;
+  activityAt: string;
+  createdAt: string;
+  mimeType: string;
+  originalName: string | null;
+  sizeBytes: number;
+};

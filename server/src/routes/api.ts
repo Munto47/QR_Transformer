@@ -3,8 +3,13 @@ import multer from "multer";
 import { prisma } from "../lib/prisma.js";
 import { upload } from "../middleware/upload.js";
 import { transformQrImage, QrTransformError } from "../services/qrTransform.js";
+import { adminRoutes } from "./adminRoutes.js";
+import { activityQrRoutes } from "./activityQrRoutes.js";
 
 export const apiRouter = Router();
+
+apiRouter.use(adminRoutes);
+apiRouter.use(activityQrRoutes);
 
 function handleError(err: unknown, res: Response) {
   if (err instanceof QrTransformError) {

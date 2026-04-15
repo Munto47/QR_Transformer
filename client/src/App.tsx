@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { subscribeAdminUnauthorized } from "./api/client";
+import { getAdminToken } from "./api/authStorage";
 import { fetchProcessingLogs, transformImage } from "./api/qr";
 import type { ProcessingLog } from "./api/types";
+import { ActivityQrSidebar } from "./components/ActivityQrSidebar";
+import { AdminToolbar } from "./components/AdminToolbar";
 import { HeaderBar } from "./components/HeaderBar";
 import { HeroSection } from "./components/HeroSection";
 import { HistoryList } from "./components/HistoryList";
@@ -26,6 +30,14 @@ export default function App() {
   /** 当前任务原图本地预览（object URL） */
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">(readStoredTheme);
+  const [adminLoggedIn, setAdminLoggedIn] = useState(
+    () => !!getAdminToken()
+  );
+  const [activityQrRefresh, setActivityQrRefresh] = useState(0);
+
+  useEffect(() => {
+    return subscribeAdminUnauthorized(() => setAdminLoggedIn(false));
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -84,12 +96,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <HeaderBar theme={theme} onToggleTheme={toggleTheme} />
+      <HeaderBar
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        trailing={
+          <AdminToolbar
+            adminLoggedIn={adminLoggedIn}
+            onLoginStateChange={setAdminLoggedIn}
+            onActivityCreated={() =>
+              setActivityQrRefresh((n) => n + 1)
+            }
+          />
+        }
+      />
 
       <main>
         <HeroSection />
 
-        <div className="mx-auto max-w-5xl space-y-10 px-5 pb-16 md:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-5 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-10">
+          <div className="min-w-0 flex-1 space-y-10">
           {error && (
             <div
               className="rounded-2xl border border-red-200/90 bg-red-50/95 px-4 py-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100"
@@ -140,6 +165,9 @@ export default function App() {
           )}
 
           <HistoryList logs={logs} loading={logsLoading} />
+          </div>
+
+          <ActivityQrSidebar refreshKey={activityQrRefresh} />
         </div>
       </main>
     </div>
