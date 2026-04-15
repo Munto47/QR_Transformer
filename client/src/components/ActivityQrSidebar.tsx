@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState, memo } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Download } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { fetchActivityQrs } from "../api/activityQr";
 import type { ActivityQr } from "../api/types";
 import { DEFAULT_ACTIVITY_SCHOOL, SCHOOL_OPTIONS } from "../constants/schools";
 import { downloadActivityPosterPng } from "../utils/activityPosterDownload";
+
+const PAGE_SIZE = 5;
+const MAX_ACTIVITIES = 10;
 
 type Props = {
   /** 递增以触发重新拉取列表 */
@@ -51,6 +54,8 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  /** 1 或 2，每页 {PAGE_SIZE} 条 */
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     try {
@@ -58,6 +63,7 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
       setErr(null);
       const data = await fetchActivityQrs(schoolFilter);
       setItems(data);
+      setPage(1);
     } catch {
       setErr("活动列表加载失败");
       setItems([]);
@@ -69,6 +75,13 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
   useEffect(() => {
     void load();
   }, [load, refreshKey]);
+
+  const totalPages = Math.min(2, Math.max(1, Math.ceil(items.length / PAGE_SIZE)));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   const handleDownloadPoster = async (item: ActivityQr) => {
     setDownloadingId(item.id);
@@ -109,7 +122,8 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
           </select>
         </label>
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          在所选学校下，按与当前时间接近程度排序，最多 5 条
+          在所选学校下，按与当前时间接近程度排序，最多 {MAX_ACTIVITIES}{" "}
+          条；每页 {PAGE_SIZE} 条，共 2 页
         </p>
 
         {loading && (
@@ -125,7 +139,7 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
         )}
 
         <ul className="mt-4 space-y-4">
-          {items.map((item, i) => (
+          {pageItems.map((item, i) => (
             <motion.li
               key={item.id}
               initial={{ opacity: 0, y: 8 }}
@@ -155,6 +169,37 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
             </motion.li>
           ))}
         </ul>
+
+        {!loading && !err && items.length > PAGE_SIZE && (
+          <nav
+            className="mt-4 flex items-center justify-between gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-2 py-2 dark:border-white/5 dark:bg-zinc-900/40"
+            aria-label="活动列表分页"
+          >
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-200/80 disabled:pointer-events-none disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+              上一页
+            </button>
+            <span className="text-xs tabular-nums text-zinc-600 dark:text-zinc-400">
+              第 {safePage} / {totalPages} 页
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setPage((p) => Math.min(totalPages, p + 1))
+              }
+              disabled={safePage >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-200/80 disabled:pointer-events-none disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              下一页
+              <ChevronRight className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </nav>
+        )}
       </div>
     </aside>
   );

@@ -311,7 +311,7 @@ activityQrRoutes.get("/activity-qrs", async (req: Request, res: Response) => {
       FROM "ActivityQr"
       WHERE "school" = ${schoolParam}
       ORDER BY abs(extract(epoch from (COALESCE("signInAt", "activityAt", "createdAt") - now())))
-      LIMIT 5
+      LIMIT 10
     `);
     res.json({ success: true, data: rows });
   } catch (e) {
