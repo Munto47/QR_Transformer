@@ -98,7 +98,9 @@ export function UploadZone({
       onDrop={(e) => {
         e.preventDefault();
         setDrag(false);
-        handleFiles(e.dataTransfer.files);
+        const files = e.dataTransfer.files;
+        if (files[0] && !files[0].type.startsWith("image/")) return;
+        handleFiles(files);
       }}
     >
       <AnimatePresence mode="wait">

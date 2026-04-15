@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { subscribeAdminUnauthorized } from "./api/client";
 import { getAdminToken } from "./api/authStorage";
-import { fetchProcessingLogs, transformImage } from "./api/qr";
+import { fetchProcessingLogs, getErrorMessage, transformImage } from "./api/qr";
 import type { ProcessingLog } from "./api/types";
 import { ActivityQrSidebar } from "./components/ActivityQrSidebar";
 import { AdminToolbar } from "./components/AdminToolbar";
@@ -57,8 +57,8 @@ export default function App() {
       setLogsLoading(true);
       const data = await fetchProcessingLogs();
       setLogs(data);
-    } catch {
-      setError("加载失败");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLogsLoading(false);
     }
@@ -83,8 +83,8 @@ export default function App() {
         setFinalContent(res.data.finalContent);
         await loadLogs();
       }
-    } catch {
-      setError("处理失败");
+    } catch (err) {
+      setError(getErrorMessage(err));
       setShowParseReference(true);
     } finally {
       setBusy(false);

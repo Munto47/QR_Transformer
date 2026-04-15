@@ -125,7 +125,7 @@ export function QrDisplay({ payload, originalSrc = null }: Props) {
 
   return (
     <section
-      className="mx-auto max-w-5xl px-5 md:px-8"
+      className="w-full"
       aria-label="转换结果"
     >
       <h2 className="mb-6 text-sm font-medium text-zinc-500">转换结果</h2>

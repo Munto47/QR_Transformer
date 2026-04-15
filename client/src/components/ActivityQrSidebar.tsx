@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import { fetchActivityQrs } from "../api/activityQr";
@@ -8,6 +8,22 @@ type Props = {
   /** 递增以触发重新拉取列表 */
   refreshKey: number;
 };
+
+const ActivityImage = memo(function ActivityImage({ id }: { id: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="mt-3 flex justify-center rounded-lg bg-white p-2 dark:bg-zinc-950/50">
+      <img
+        src={`/api/activity-qrs/${id}/image`}
+        alt=""
+        className="max-h-40 w-auto max-w-full object-contain"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+});
 
 function formatActivityAt(iso: string): string {
   try {
@@ -84,14 +100,7 @@ export function ActivityQrSidebar({ refreshKey }: Props) {
                 <Calendar className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
                 {formatActivityAt(item.activityAt)}
               </p>
-              <div className="mt-3 flex justify-center rounded-lg bg-white p-2 dark:bg-zinc-950/50">
-                <img
-                  src={`/api/activity-qrs/${item.id}/image`}
-                  alt=""
-                  className="max-h-40 w-auto max-w-full object-contain"
-                  loading="lazy"
-                />
-              </div>
+              <ActivityImage id={item.id} />
             </motion.li>
           ))}
         </ul>
