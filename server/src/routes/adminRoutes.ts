@@ -16,7 +16,7 @@ function timingSafeStringEqual(a: string, b: string): boolean {
 adminRoutes.post("/admin/login", async (req: Request, res: Response) => {
   try {
     const password =
-      typeof req.body?.password === "string" ? req.body.password : "";
+      typeof req.body?.password === "string" ? req.body.password.trim() : "";
     const expected = process.env.ADMIN_PASSWORD?.trim();
     if (!expected) {
       console.error("ADMIN_PASSWORD 未配置");
