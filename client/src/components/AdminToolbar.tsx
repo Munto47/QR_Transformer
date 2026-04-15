@@ -151,7 +151,7 @@ export function AdminToolbar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/45 p-4 pb-10 pt-[min(14vh,4rem)] backdrop-blur-[2px] sm:pt-[min(18vh,5.5rem)]"
             onClick={(ev) => {
               if (ev.target === ev.currentTarget) closeLogin();
             }}
@@ -220,7 +220,7 @@ export function AdminToolbar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/45 p-4 pb-10 pt-[min(14vh,4rem)] backdrop-blur-[2px] sm:pt-[min(18vh,5.5rem)]"
             onClick={(ev) => {
               if (ev.target === ev.currentTarget) closeSubmit();
             }}
