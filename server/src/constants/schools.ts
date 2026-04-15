@@ -3,7 +3,7 @@ export const SCHOOL_OPTIONS = [
   "江西师范大学",
   "江西科技学院",
   "南昌航空大学",
-  "其他",
+  "其他高校",
 ] as const;
 
 export type School = (typeof SCHOOL_OPTIONS)[number];
