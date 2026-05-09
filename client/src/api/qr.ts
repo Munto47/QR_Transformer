@@ -1,6 +1,6 @@
 import { isAxiosError } from "axios";
 import { api } from "./client";
-import type { ApiErrorBody, LogsResponse, TransformResponse } from "./types";
+import type { ApiErrorBody, TransformResponse } from "./types";
 
 export async function transformImage(file: File) {
   const form = new FormData();
@@ -9,9 +9,9 @@ export async function transformImage(file: File) {
   return data;
 }
 
-export async function fetchProcessingLogs() {
-  const { data } = await api.get<LogsResponse>("/processing-logs");
-  return data.data;
+export async function fetchProcessingCount() {
+  const { data } = await api.get<{ success: true; data: { count: number } }>("/processing-logs/count");
+  return data.data.count;
 }
 
 export function getErrorMessage(err: unknown): string {

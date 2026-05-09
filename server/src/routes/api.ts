@@ -124,6 +124,15 @@ apiRouter.get("/processing-logs", async (_req: Request, res: Response) => {
   }
 });
 
+apiRouter.get("/processing-logs/count", async (_req: Request, res: Response) => {
+  try {
+    const count = await prisma.processingLog.count();
+    res.json({ success: true, data: { count } });
+  } catch (e) {
+    handleError(e, res);
+  }
+});
+
 apiRouter.get(
   "/processing-logs/:id/image",
   async (req: Request, res: Response) => {

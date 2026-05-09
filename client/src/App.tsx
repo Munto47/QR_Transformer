@@ -2,13 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { subscribeAdminUnauthorized } from "./api/client";
 import { getAdminToken } from "./api/authStorage";
-import { fetchProcessingLogs, getErrorMessage, transformImage } from "./api/qr";
-import type { ProcessingLog } from "./api/types";
+import { getErrorMessage, transformImage } from "./api/qr";
 import { ActivityQrSidebar } from "./components/ActivityQrSidebar";
 import { AdminToolbar } from "./components/AdminToolbar";
+import { DomainNotice } from "./components/DomainNotice";
 import { HeaderBar } from "./components/HeaderBar";
 import { HeroSection } from "./components/HeroSection";
-import { HistoryList } from "./components/HistoryList";
 import { QrDisplay } from "./components/QrDisplay";
 import { ShareTogetherForm } from "./components/ShareTogetherForm";
 import { UploadZone } from "./components/UploadZone";
@@ -24,8 +23,6 @@ function readStoredTheme(): "dark" | "light" {
 
 export default function App() {
   const [finalContent, setFinalContent] = useState<string | null>(null);
-  const [logs, setLogs] = useState<ProcessingLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showParseReference, setShowParseReference] = useState(false);
@@ -66,22 +63,6 @@ export default function App() {
     return () => revokePreview(previewUrl);
   }, [previewUrl, revokePreview]);
 
-  const loadLogs = useCallback(async () => {
-    try {
-      setLogsLoading(true);
-      const data = await fetchProcessingLogs();
-      setLogs(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLogsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadLogs();
-  }, [loadLogs]);
-
   const handleFile = async (file: File) => {
     setError(null);
     setShowParseReference(false);
@@ -95,7 +76,6 @@ export default function App() {
       const res = await transformImage(file);
       if (res.success) {
         setFinalContent(res.data.finalContent);
-        await loadLogs();
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -125,6 +105,7 @@ export default function App() {
       />
 
       <main>
+        <DomainNotice />
         <div ref={shareTogetherAnchorRef} className="scroll-mt-16" />
         <AnimatePresence>
           {showShareTogether && finalContent && (
@@ -194,7 +175,6 @@ export default function App() {
             />
           )}
 
-          <HistoryList logs={logs} loading={logsLoading} />
           </div>
 
           <ActivityQrSidebar refreshKey={activityQrRefresh} />
