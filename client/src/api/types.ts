@@ -23,4 +23,5 @@ export type ActivityQr = {
   mimeType: string;
   originalName: string | null;
   sizeBytes: number;
+  downloadCount?: number;
 };

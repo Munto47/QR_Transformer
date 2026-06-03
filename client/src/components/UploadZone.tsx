@@ -81,6 +81,20 @@ export function UploadZone({
     [onFile]
   );
 
+  // Ctrl+V 粘贴图片
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      if (disabled) return;
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
+        i.type.startsWith("image/")
+      );
+      const file = item?.getAsFile();
+      if (file) onFile(file);
+    };
+    window.addEventListener("paste", handler);
+    return () => window.removeEventListener("paste", handler);
+  }, [disabled, onFile]);
+
   const isCompact = variant === "compact";
   const showProcessing = Boolean(busy && previewUrl);
 
@@ -125,7 +139,7 @@ export function UploadZone({
                 <CloudUpload className="h-7 w-7" strokeWidth={1.5} />
               </div>
               <p className="mb-1 text-[15px] font-medium text-zinc-800 dark:text-zinc-200">
-                {isCompact ? "上传另一张图片" : "点击或拖拽图片到此处"}
+                {isCompact ? "上传另一张图片" : "点击、拖拽或粘贴图片（Ctrl+V）"}
               </p>
               <p className="mb-6 text-xs text-zinc-500">
                 支持常见图片格式，单张建议不超过 5MB

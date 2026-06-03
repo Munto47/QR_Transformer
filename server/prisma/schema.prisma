@@ -24,14 +24,13 @@ model ActivityQr {
   id           String    @id @default(cuid())
   activityName String
   activityAt   DateTime
-  /** 学校（五选一），与客户端常量一致 */
   school       String    @default("其他高校")
-  /** 活动签到开始时间，选填 */
   signInAt     DateTime?
   createdAt    DateTime  @default(now())
 
-  imageBytes   Bytes
-  mimeType     String
-  originalName String?
-  sizeBytes    Int
+  imageBytes    Bytes
+  mimeType      String
+  originalName  String?
+  sizeBytes     Int
+  downloadCount Int       @default(0)
 }

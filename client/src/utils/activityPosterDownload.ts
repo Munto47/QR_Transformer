@@ -1,11 +1,6 @@
-/**
- * 在客户端将活动标题与二维码图合成 PNG 并触发下载。
- */
-function wrapLines(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] {
+const WATERMARK = "更多活动二维码 → www.breezecode.top";
+
+function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const t = text.trim() || " ";
   const lines: string[] = [];
   let line = "";
@@ -24,9 +19,7 @@ function wrapLines(
 
 export async function downloadActivityPosterPng(params: {
   activityName: string;
-  /** 与页面同源的图片 URL，例如 `/api/activity-qrs/:id/image` */
   qrImageUrl: string;
-  /** 下载文件名（不含扩展名） */
   fileBaseName: string;
 }): Promise<void> {
   const { activityName, qrImageUrl, fileBaseName } = params;
@@ -41,15 +34,16 @@ export async function downloadActivityPosterPng(params: {
 
   const padding = 16;
   const contentW = 288;
-  const fontSize = 15;
-  const lineHeight = Math.round(fontSize * 1.4);
+  const titleFontSize = 15;
+  const lineHeight = Math.round(titleFontSize * 1.4);
+  const watermarkFontSize = 11;
+  const watermarkH = watermarkFontSize + padding * 1.5;
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 不可用");
 
-  ctx.font = `600 ${fontSize}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`;
-
+  ctx.font = `600 ${titleFontSize}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`;
   const titleLines = wrapLines(ctx, activityName, contentW - padding * 2);
   const titleH = titleLines.length * lineHeight + padding * 2;
 
@@ -57,12 +51,15 @@ export async function downloadActivityPosterPng(params: {
   const qrDrawH = (img.naturalHeight / img.naturalWidth) * qrDrawW;
 
   canvas.width = contentW + padding * 2;
-  canvas.height = titleH + qrDrawH + padding * 2;
+  canvas.height = titleH + qrDrawH + watermarkH + padding;
 
+  // 白色背景
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // 标题文字
   ctx.fillStyle = "#18181b";
+  ctx.font = `600 ${titleFontSize}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textBaseline = "top";
   let y = padding;
   for (const ln of titleLines) {
@@ -70,16 +67,30 @@ export async function downloadActivityPosterPng(params: {
     y += lineHeight;
   }
 
+  // 二维码
   const qrX = (canvas.width - qrDrawW) / 2;
   ctx.drawImage(img, qrX, titleH, qrDrawW, qrDrawH);
+
+  // 水印分隔线
+  const wmarkY = titleH + qrDrawH + padding * 0.75;
+  ctx.strokeStyle = "#e4e4e7";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, wmarkY);
+  ctx.lineTo(canvas.width - padding, wmarkY);
+  ctx.stroke();
+
+  // 水印文字
+  ctx.fillStyle = "#a1a1aa";
+  ctx.font = `400 ${watermarkFontSize}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+  ctx.fillText(WATERMARK, canvas.width / 2, wmarkY + watermarkH / 2);
 
   await new Promise<void>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (!blob) {
-          reject(new Error("导出失败"));
-          return;
-        }
+        if (!blob) { reject(new Error("导出失败")); return; }
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;

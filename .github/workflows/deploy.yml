@@ -1,0 +1,21 @@
+name: 部署到阿里云 ECS
+
+on:
+  push:
+    branches: [main]          # 推送到 main 分支时自动触发
+  workflow_dispatch:           # 也可在 GitHub Actions 页面手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH 登录 ECS 并执行部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ECS_HOST }}       # 阿里云 ECS 公网 IP
+          username: ${{ secrets.ECS_USER }}   # 登录用户名，通常为 root 或 ubuntu
+          key: ${{ secrets.ECS_SSH_KEY }}     # ECS 服务器的 SSH 私钥
+          script: |
+            set -e
+            cd /opt/qr-transformer            # 项目在服务器上的路径，按实际修改
+            bash deploy.sh

@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { BookOpen } from "lucide-react";
 import { fetchProcessingCount } from "../api/qr";
 
 export function HeroSection() {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchProcessingCount()
-      .then(setCount)
-      .catch(() => {});
+    fetchProcessingCount().then(setCount).catch(() => {});
   }, []);
 
   return (
@@ -24,11 +24,20 @@ export function HeroSection() {
       <p className="mx-auto mt-6 max-w-xl text-pretty text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-400 md:text-base">
         上传活动平台的活动二维码图片，自动解析并生成可用于签到/签退的焕新二维码。安全、快速、无需注册。
       </p>
-      {count !== null && (
-        <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-500">
-          已累计处理 {count.toLocaleString()} 次
-        </p>
-      )}
+      <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        {count !== null && (
+          <span className="text-xs text-zinc-400 dark:text-zinc-500">
+            已累计处理 {count.toLocaleString()} 次
+          </span>
+        )}
+        <Link
+          to="/tutorial"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200/90 bg-white/80 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-indigo-200 hover:bg-indigo-50/60 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400 dark:hover:border-indigo-500/30 dark:hover:text-indigo-400"
+        >
+          <BookOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
+          查看使用教程
+        </Link>
+      </div>
     </motion.section>
   );
 }

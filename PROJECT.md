@@ -1,14 +1,20 @@
 # QR-Transformer 项目说明
 
-本文档说明 **QR-Transformer** 的定位、技术栈、使用方式与运行流程。更简短的入口见根目录 [`README.md`](README.md)。
+本文档面向开发与运维，说明技术栈、运行流程与部署方式。简明入口见 [`README.md`](README.md)。
 
 ---
 
-## 1. 项目是什么
+## 1. 项目定位
 
-**QR-Transformer** 将志愿服务等活动平台上的 **活动二维码** 图片解析后，转换为适用于 **签到 / 签退** 流程的 **签到二维码**（payload 中的业务类型等会按规则调整）。前端提供上传、结果展示、处理历史；并支持「大家一起用」侧栏（按学校筛选活动二维码）以及管理员投稿活动二维码等功能。
+**QR-Transformer** 将志愿服务等活动平台的**活动二维码**图片解析后，转换为适用于**签到 / 签退**的签到二维码（payload 中的业务类型等按规则调整）。
 
-核心业务在后端完成：**图片解码 → 二维码识别（jsQR）→ 载荷解析与转换（`qrTransform`）→ 可选写入 PostgreSQL**。
+**线上地址：** [https://www.breezecode.top](https://www.breezecode.top)  
+**部署平台：** 阿里云 ECS + Docker + Nginx + PostgreSQL
+
+核心功能：
+- 前端上传图片 → 后端用 jsQR 识别 → 载荷解析与转换 → 返回新 payload
+- 「大家一起用」侧栏：按学校共享活动二维码（近期活动 + 本周热门）
+- 管理员后台（`/admin`）：分页查看转换记录与活动列表，支持搜索筛选删除
 
 ---
 
@@ -18,9 +24,9 @@
 |------|------|
 | `package.json` | 根脚本：一键安装子项目、`dev` 同时起前后端、`build`、`start` |
 | `client/` | React + Vite 单页应用，生产构建输出 `client/dist` |
-| `server/` | Express API、`prisma` 数据层、二维码与图片处理逻辑 |
+| `server/` | Express API、Prisma 数据层、二维码与图片处理逻辑 |
 | `Dockerfile` | 单容器：构建 client + server，启动前执行 `prisma migrate deploy` |
-| `docs/` | 说明配图等（如 README 中引用的截图） |
+| `docs/` | 教程配图（`image1.png`、`image2.png`） |
 
 ---
 
@@ -30,156 +36,219 @@
 
 | 类别 | 技术 |
 |------|------|
-| 运行时 / 框架 | **Node.js**（开发构建）、**React 19**、**TypeScript** |
-| 构建工具 | **Vite 8**、`@vitejs/plugin-react` |
+| 框架 | **React 19**、**TypeScript**、**Vite 8** |
+| 路由 | **React Router v7**（`BrowserRouter`，`/`、`/tutorial`、`/admin`） |
 | 样式 | **Tailwind CSS 4**（`@tailwindcss/vite` 插件） |
 | HTTP | **Axios**（封装在 `src/api/`） |
 | 动效 / 图标 | **Framer Motion**、**lucide-react** |
-| 二维码展示 | **`qrcode`**（浏览器侧生成二维码等） |
-| 代码质量 | **ESLint 9**（`eslint.config.js`、typescript-eslint 等） |
+| 二维码 | **`qrcode`**（浏览器侧生成）、**`canvas-confetti`**（转换成功庆祝动效） |
 
-开发时通过 Vite **`/api` 代理** 转发到后端（默认 `http://127.0.0.1:3100`，可用 `VITE_API_PROXY_TARGET` 覆盖）。
+开发时通过 Vite **`/api` 代理**转发到后端（默认 `http://127.0.0.1:3100`）。
 
 ### 3.2 后端（`server/`）
 
 | 类别 | 技术 |
 |------|------|
-| 运行时 | **Node.js**（建议与 Dockerfile 一致使用 **20** 或兼容版本） |
+| 运行时 | **Node.js 20**（Dockerfile 基准） |
 | 语言 | **TypeScript**，开发用 **`tsx watch`**，生产为 `tsc` 编译后的 `dist/` |
 | Web | **Express 4**、**cors**、**dotenv** |
-| 数据库 | **PostgreSQL** + **Prisma 6**（`@prisma/client`、迁移在 `server/prisma/migrations/`） |
-| 上传 | **multer**（内存存储，配合自定义「仅图片」校验） |
-| 图像 / 二维码 | **jimp** 读图、**jsqr** 解码；必要时服务端用 **qrcode** 生成 PNG |
-| 管理端鉴权 | **jose**（JWT，`ADMIN_PASSWORD` + `JWT_SECRET`） |
+| 数据库 | **PostgreSQL** + **Prisma 6**（迁移在 `server/prisma/migrations/`） |
+| 上传 | **multer**（内存存储，限 5MB，仅图片） |
+| 图像 / 二维码 | **jimp** 读图、**jsqr** 解码；服务端用 **`qrcode`** 生成 PNG |
+| 管理端鉴权 | **jose**（JWT HS256，`ADMIN_PASSWORD` + `JWT_SECRET`，有效期 2 小时） |
 
-### 3.3 根目录与部署
+### 3.3 部署层
 
 | 类别 | 技术 |
 |------|------|
-| 并行开发 | **concurrently**（`npm run dev` 同时跑 `server` 与 `client`） |
-| 容器 | **Docker**（`node:20-bookworm-slim`，镜像内安装 **OpenSSL** 以满足 Prisma） |
+| 服务器 | 阿里云 ECS |
+| 容器化 | **Docker**（`node:20-bookworm-slim`，镜像内安装 **OpenSSL** 以满足 Prisma） |
+| 反向代理 | **Nginx**（HTTP → HTTPS 跳转、反代至容器端口） |
+| HTTPS | 阿里云 SSL 证书 / Let's Encrypt |
+| 数据库 | 阿里云 RDS PostgreSQL 或同机 PostgreSQL |
 
 ---
 
-## 4. 使用方式与流程
+## 4. 页面路由
 
-### 4.1 终端用户（线上或本地构建后）
-
-1. 在浏览器打开部署地址或本地前端地址（开发默认 `http://localhost:5173`；生产通常由 Express 托管静态资源，同源访问 `/api`）。
-2. 在活动平台 **活动详情** 中取得 **活动二维码**（截图或保存图片，尽量清晰完整）。
-3. 在页面上传图片，等待解析；成功则展示 **转换后的签到用二维码内容**，并可查看 **最近处理记录**。
-4. 若解析失败，界面可提示参考示意（见前端 `showParseReference` 等逻辑）。
-5. **「大家一起用」**：用户可选择学校、填写活动信息等，将当前转换得到的 payload 投稿为共享活动（公开接口 `POST /api/activity-qrs/share`）。
-6. **侧栏活动列表**：按 `school` 查询附近时间的活动二维码（`GET /api/activity-qrs?school=...`），可拉取图片 `GET /api/activity-qrs/:id/image`。
-7. **管理员**：通过 `POST /api/admin/login` 获取 JWT，在已登录状态下可上传活动二维码入库（`POST /api/activity-qrs`，需 `Authorization: Bearer <token>`）。
-
-### 4.2 本地开发（推荐流程）
-
-**前置条件：** **Node.js 18+**、**npm**、可连接的 **PostgreSQL**。
-
-1. 在仓库根目录安装根依赖与子项目依赖：
-
-   ```bash
-   npm install
-   npm run install:all
-   ```
-
-2. 在 `server/` 下复制 `server/.env.example` 为 `server/.env`，填写 **`DATABASE_URL`**（以及生产或管理功能所需的 **`ADMIN_PASSWORD`**、**`JWT_SECRET`** 等）。
-
-3. 执行数据库迁移（首次或 schema 变更后）：
-
-   ```bash
-   cd server && npx prisma migrate dev && cd ..
-   ```
-
-4. 启动前后端（单命令）：
-
-   ```bash
-   npm run dev
-   ```
-
-   - 前端开发服务器：默认 **5173**（Vite）。
-   - 后端 API：默认 **3100**（可在 `server/.env` 中设置 `PORT`）。
-   - 若改后端端口，请在 `client/.env.local` 中设置 **`VITE_API_PROXY_TARGET`** 指向同一地址，以便代理 `/api` 正确转发。
-
-5. 可选：仅构建验证
-
-   ```bash
-   npm run build
-   ```
-
-   根目录 **`npm run start`** 会执行 `server` 的 `start`（先 **`prisma migrate deploy`** 再启动 Node），通常用于生产或本地模拟生产；需已构建 `client` 且 `NODE_ENV=production` 时 Express 才会托管 `client/dist`。
-
-### 4.3 生产部署（概要）
-
-- **Docker / Railway 等**：使用根目录 `Dockerfile`。构建阶段 `npm ci` 安装 client、server 并执行 `client`/`server` 的 `build`；运行时需注入 **`DATABASE_URL`**，启动命令内含 **`prisma migrate deploy`** 与 `node dist/index.js`。平台分配的 **`PORT`** 由环境变量提供。
-- **自建**：安装 Node 与 PostgreSQL → 配置 `DATABASE_URL` → 安装依赖并 `npm run build` → 设置 `NODE_ENV=production` 与 `CLIENT_DIST`（若静态资源不在默认相对路径）→ 运行 `server` 的 `npm start`。
-
-**注意：** 未配置有效 **`DATABASE_URL`** 时，迁移无法完成，服务无法正常持久化数据（与 README 说明一致）。
-
----
-
-## 5. 环境变量（要点）
-
-| 变量 | 作用 |
+| 路径 | 说明 |
 |------|------|
-| `DATABASE_URL` | Prisma 连接 PostgreSQL（**必填**于迁移与运行） |
-| `PORT` | 后端监听端口（默认 `3100`） |
-| `HOST` | 监听地址（默认 `0.0.0.0`，容器内需对外访问时常用） |
-| `CLIENT_ORIGIN` | CORS 来源（未设时 `cors` 默认较宽松，生产可按需收紧） |
-| `CLIENT_DIST` | 生产环境静态文件目录，默认相对 `server` 解析到 `../../client/dist` |
-| `ADMIN_PASSWORD` | 管理员登录口令（`POST /api/admin/login`） |
-| `JWT_SECRET` | 签发管理员 JWT |
-| `VITE_API_PROXY_TARGET` | **仅前端开发**：Vite 将 `/api` 代理到的后端基地址 |
+| `/` | 主页：上传转换、历史记录、分享链接、侧边栏活动列表 |
+| `/tutorial` | 使用教程：两张指导图片 + 步骤说明 + 常见问题 |
+| `/admin` | 管理后台：概览统计、转换记录、活动二维码（均分页，每页 20 条） |
 
-勿将含密钥的 `.env` 提交到版本库；以 `server/.env.example` 为模板。
+服务端已配置静态资源 fallback，所有路径均返回 `index.html`，由 React Router 处理。
 
 ---
 
-## 6. 常用 npm 脚本
+## 5. 本地开发
 
-| 命令 | 说明 |
-|------|------|
-| `npm run install:all` | 分别安装 `server` 与 `client` 依赖 |
-| `npm run dev` | 并行启动 server（`tsx watch`）与 client（`vite`） |
-| `npm run build` | 先构建 client，再构建 server |
-| `npm run start` | 在 `server` 目录执行 `start`（迁移 deploy + 启动） |
-| `npm run db:migrate` 等 | 见 `server/package.json`（`db:migrate`、`migrate:deploy` 等） |
+**前置条件：** Node.js 18+、npm、PostgreSQL 实例（本地 Docker 或远程）。
+
+```bash
+npm install && npm run install:all
+
+# 配置 server/.env（见下方环境变量说明）
+cp server/.env.example server/.env
+
+# 首次建表
+cd server && npx prisma migrate deploy && cd ..
+
+# 启动
+npm run dev
+# 前端：http://localhost:5173
+# 后端：http://localhost:3100
+```
+
+**本地 PostgreSQL（Docker）：**
+
+```bash
+docker run -d \
+  --name qr-pg \
+  -e POSTGRES_USER=qr \
+  -e POSTGRES_PASSWORD=qr123 \
+  -e POSTGRES_DB=qr_dev \
+  -p 5432:5432 \
+  postgres:16-alpine
+```
+
+`DATABASE_URL="postgresql://qr:qr123@localhost:5432/qr_dev"`
 
 ---
 
-## 7. API 一览
+## 6. 环境变量
 
-基础路径均为 **`/api`**（健康检查在根路径 **`/health`**）。
+| 变量 | 说明 | 必填 |
+|------|------|------|
+| `DATABASE_URL` | PostgreSQL 连接字符串 | **是** |
+| `ADMIN_PASSWORD` | 管理员登录密码 | **是** |
+| `JWT_SECRET` | JWT 签名密钥（32 位以上随机字符串） | **是** |
+| `PORT` | 后端监听端口，默认 `3100` | 否 |
+| `HOST` | 监听地址，默认 `0.0.0.0` | 否 |
+| `CLIENT_ORIGIN` | CORS 来源限制（生产建议设为 `https://www.breezecode.top`） | 否 |
+| `CLIENT_DIST` | 静态文件目录，默认 `../../client/dist`（相对 server） | 否 |
+| `VITE_API_PROXY_TARGET` | **仅前端开发**：Vite 代理目标，默认 `http://127.0.0.1:3100` | 否 |
+
+**注意：** 勿将含密钥的 `.env` 提交到 Git；以 `server/.env.example` 为模板。
+
+---
+
+## 7. 生产部署（阿里云）
+
+### 方式一：Docker（推荐）
+
+```bash
+# 在阿里云 ECS 上
+docker build -t qr-transformer .
+
+docker run -d \
+  --name qr-transformer \
+  --restart unless-stopped \
+  -p 3100:3100 \
+  -e DATABASE_URL="postgresql://user:pass@host:5432/dbname" \
+  -e ADMIN_PASSWORD="strong-password" \
+  -e JWT_SECRET="random-64-char-string" \
+  -e NODE_ENV=production \
+  qr-transformer
+```
+
+容器启动时自动执行 `prisma migrate deploy` 完成数据库迁移。
+
+### 方式二：直接运行
+
+```bash
+# 在 ECS 上安装 Node.js 20 + PostgreSQL
+npm install && npm run install:all
+
+# 配置 server/.env
+cd server && npx prisma migrate deploy && cd ..
+
+npm run build
+NODE_ENV=production npm run start
+# 或用 PM2：pm2 start "npm run start" --name qr-transformer
+```
+
+### Nginx 配置
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name www.breezecode.top;
+
+    ssl_certificate     /etc/ssl/breezecode.top.pem;
+    ssl_certificate_key /etc/ssl/breezecode.top.key;
+
+    location / {
+        proxy_pass         http://127.0.0.1:3100;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        client_max_body_size 10m;
+    }
+}
+
+server {
+    listen 80;
+    server_name www.breezecode.top;
+    return 301 https://$host$request_uri;
+}
+```
+
+---
+
+## 8. API 一览
+
+基础路径均为 `/api`（健康检查在 `/health`）。
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
 | `GET` | `/health` | 无 | 健康检查 `{ ok: true }` |
-| `POST` | `/api/transform` | 无 | `multipart/form-data`，字段名 **`image`**，上传二维码图片，返回转换结果 |
-| `GET` | `/api/processing-logs` | 无 | 最近 50 条处理记录（不含图片二进制） |
-| `GET` | `/api/processing-logs/:id/image` | 无 | 指定记录的上传原图 |
-| `POST` | `/api/admin/login` | 无 | Body JSON：`password`，返回 JWT |
-| `POST` | `/api/activity-qrs` | **管理员 JWT** | `multipart/form-data`：`image` + 活动字段等，创建活动二维码记录 |
-| `GET` | `/api/activity-qrs` | 无 | Query：**`school`**（合法学校值），返回该校推荐列表 |
-| `GET` | `/api/activity-qrs/:id/image` | 无 | 活动二维码图片 |
-| `POST` | `/api/activity-qrs/share` | 无 | JSON：`school`、`activityName`、`qrPayload`、可选 `signInAt`，服务端生成 PNG 并入库 |
+| `POST` | `/api/transform` | 无 | `multipart/form-data`，字段 `image`，返回转换结果 |
+| `GET` | `/api/processing-logs/count` | 无 | 累计处理次数 |
+| `POST` | `/api/admin/login` | 无 | 管理员登录，返回 JWT |
+| `GET` | `/api/admin/stats` | JWT | 概览统计（转换数、活动数、下载数） |
+| `GET` | `/api/admin/processing-logs` | JWT | 分页查询转换记录（`page`、`limit`≤50、`search`） |
+| `DELETE` | `/api/admin/processing-logs/:id` | JWT | 删除转换记录 |
+| `GET` | `/api/admin/activity-qrs` | JWT | 分页查询活动（`page`、`limit`≤50、`school`、`dateFrom`、`dateTo`） |
+| `DELETE` | `/api/admin/activity-qrs/:id` | JWT | 删除活动 |
+| `GET` | `/api/activity-qrs` | 无 | 按学校查询近期活动（`?school=`） |
+| `GET` | `/api/activity-qrs/hot` | 无 | 本周热门活动（按下载量排序） |
+| `GET` | `/api/activity-qrs/school-stats` | 无 | 学校活动统计（`?school=`） |
+| `POST` | `/api/activity-qrs/share` | 无 | 公开投稿活动二维码 |
+| `POST` | `/api/activity-qrs` | JWT | 管理员上传活动二维码（`multipart/form-data`） |
+| `GET` | `/api/activity-qrs/:id/image` | 无 | 活动二维码图片（自增下载计数） |
 
-单文件上传大小限制为 **5MB**（超出返回 `FILE_TOO_LARGE` 类错误）。
+单文件上传限制 **5MB**；超出返回 `FILE_TOO_LARGE` 错误。
 
 ---
 
-## 8. 数据模型（Prisma 摘要）
+## 9. 数据模型
 
-- **`ProcessingLog`**：每次 `/api/transform` 成功后的原始内容、提取 ID、最终内容、上传图片二进制与元数据、创建时间。
-- **`ActivityQr`**：活动名称、时间、学校、可选签到开始时间、图片二进制与元数据等，供侧栏与分享功能使用。
+- **`ProcessingLog`**：每次 `/api/transform` 的原始内容、提取 ID、最终内容、上传图片二进制与元数据。
+- **`ActivityQr`**：活动名称、时间、学校、签到时间、图片二进制、`downloadCount`（下载计数）等。
 
 详细字段见 `server/prisma/schema.prisma`。
 
 ---
 
-## 9. 与其他文档的关系
+## 10. 常用脚本
 
-- **[`README.md`](README.md)**：在线体验链接、简明使用提示、部署步骤与 API 简表。
-- **`PROJECT.md`（本文）**：面向开发与运维的 **结构、技术栈、流程与环境** 总览。
+| 命令 | 说明 |
+|------|------|
+| `npm run install:all` | 安装 `server` 与 `client` 依赖 |
+| `npm run dev` | 并行启动 server（`tsx watch`）与 client（`vite`） |
+| `npm run build` | 先构建 client，再构建 server |
+| `npm run start` | 执行 `prisma migrate deploy` 后启动 Node（生产用） |
+| `cd server && npx prisma migrate dev` | 本地新增迁移 |
+| `cd server && npx prisma generate` | 重新生成 Prisma Client |
 
-若线上地址或依赖大版本升级，请同步更新 `README.md` 与本文件中的版本描述。
+---
+
+## 11. 文档关系
+
+- **[`README.md`](README.md)**：面向用户与初次接触项目的开发者，含在线体验、使用教程、快速部署。
+- **`PROJECT.md`（本文）**：面向开发与运维，含完整技术架构、流程与 API 参考。
+
+如线上地址或技术栈有变更，请同步更新两个文件。

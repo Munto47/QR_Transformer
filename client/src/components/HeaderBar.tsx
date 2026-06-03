@@ -1,20 +1,16 @@
 import type { ReactNode } from "react";
-import { ExternalLink, Moon, Sun } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookOpen, ExternalLink, Moon, Sun } from "lucide-react";
 import { motion } from "framer-motion";
 
-/** 可改为仓库地址 */
-const GITHUB_HREF = "https://github.com";
+const GITHUB_HREF = "https://github.com/Munto47/QR_Transformer";
 
 type Props = {
   theme: "dark" | "light";
   onToggleTheme: () => void;
-  /** 顶栏右侧额外区域（如管理员入口），位于 GitHub 与主题切换左侧 */
   trailing?: ReactNode;
 };
 
-/**
- * 顶栏：品牌名 + GitHub + 主题切换（暗黑优先）
- */
 export function HeaderBar({ theme, onToggleTheme, trailing }: Props) {
   const isDark = theme === "dark";
 
@@ -26,11 +22,22 @@ export function HeaderBar({ theme, onToggleTheme, trailing }: Props) {
       className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/75 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4 md:px-8">
-        <span className="text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <Link
+          to="/"
+          className="text-[15px] font-semibold tracking-tight text-zinc-900 hover:text-indigo-600 transition-colors dark:text-zinc-100 dark:hover:text-indigo-400"
+        >
           QR_Transformer
-        </span>
+        </Link>
         <div className="flex shrink-0 items-center gap-1">
           {trailing}
+          <Link
+            to="/tutorial"
+            className="flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-200"
+            aria-label="使用教程"
+          >
+            <BookOpen className="h-[17px] w-[17px]" strokeWidth={1.75} />
+            <span className="hidden sm:inline">使用教程</span>
+          </Link>
           <a
             href={GITHUB_HREF}
             target="_blank"

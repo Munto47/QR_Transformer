@@ -5,10 +5,12 @@ import { upload } from "../middleware/upload.js";
 import { transformQrImage, QrTransformError } from "../services/qrTransform.js";
 import { adminRoutes } from "./adminRoutes.js";
 import { activityQrRoutes } from "./activityQrRoutes.js";
+import { adminDashboardRoutes } from "./adminDashboardRoutes.js";
 
 export const apiRouter = Router();
 
 apiRouter.use(adminRoutes);
+apiRouter.use(adminDashboardRoutes);
 apiRouter.use(activityQrRoutes);
 
 function handleError(err: unknown, res: Response) {

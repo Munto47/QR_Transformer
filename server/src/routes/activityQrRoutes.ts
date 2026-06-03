@@ -1,7 +1,6 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import QRCode from "qrcode";
-import { Prisma } from "@prisma/client";
 import { isValidSchool } from "../constants/schools.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
@@ -280,6 +279,56 @@ activityQrRoutes.post(
   }
 );
 
+/** 本周热门活动（按下载数排序，静态路由须在 /:id 之前） */
+activityQrRoutes.get("/activity-qrs/hot", async (_req: Request, res: Response) => {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const rows = await prisma.activityQr.findMany({
+      where: { createdAt: { gte: sevenDaysAgo }, downloadCount: { gt: 0 } },
+      orderBy: { downloadCount: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        activityName: true,
+        activityAt: true,
+        school: true,
+        signInAt: true,
+        createdAt: true,
+        mimeType: true,
+        originalName: true,
+        sizeBytes: true,
+        downloadCount: true,
+      },
+    });
+    res.json({ success: true, data: rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: "服务器内部错误" } });
+  }
+});
+
+/** 学校活动统计（投稿成功后反馈用） */
+activityQrRoutes.get("/activity-qrs/school-stats", async (req: Request, res: Response) => {
+  try {
+    const school = typeof req.query.school === "string" ? req.query.school.trim() : "";
+    if (!school || !isValidSchool(school)) {
+      res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: "请提供有效学校" } });
+      return;
+    }
+    const [activityCount, agg] = await Promise.all([
+      prisma.activityQr.count({ where: { school } }),
+      prisma.activityQr.aggregate({ where: { school }, _sum: { downloadCount: true } }),
+    ]);
+    res.json({
+      success: true,
+      data: { activityCount, totalDownloads: agg._sum.downloadCount ?? 0 },
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: "服务器内部错误" } });
+  }
+});
+
 activityQrRoutes.get("/activity-qrs", async (req: Request, res: Response) => {
   try {
     const schoolParam = req.query.school;
@@ -294,26 +343,35 @@ activityQrRoutes.get("/activity-qrs", async (req: Request, res: Response) => {
       return;
     }
 
-    const rows = await prisma.$queryRaw<
-      Array<{
-        id: string;
-        activityName: string;
-        activityAt: Date;
-        school: string;
-        signInAt: Date | null;
-        createdAt: Date;
-        mimeType: string;
-        originalName: string | null;
-        sizeBytes: number;
-      }>
-    >(Prisma.sql`
-      SELECT id, "activityName", "activityAt", "school", "signInAt", "createdAt", "mimeType", "originalName", "sizeBytes"
-      FROM "ActivityQr"
-      WHERE "school" = ${schoolParam}
-      ORDER BY abs(extract(epoch from (COALESCE("signInAt", "activityAt", "createdAt") - now())))
-      LIMIT 10
-    `);
-    res.json({ success: true, data: rows });
+    // 用 Prisma ORM 查询，兼容所有数据库；用 JS 按"与当前时间接近程度"排序
+    const all = await prisma.activityQr.findMany({
+      where: { school: schoolParam },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        activityName: true,
+        activityAt: true,
+        school: true,
+        signInAt: true,
+        createdAt: true,
+        mimeType: true,
+        originalName: true,
+        sizeBytes: true,
+        downloadCount: true,
+      },
+    });
+
+    const now = Date.now();
+    const sorted = all
+      .sort((a, b) => {
+        const aMs = (a.signInAt ?? a.activityAt ?? a.createdAt).getTime();
+        const bMs = (b.signInAt ?? b.activityAt ?? b.createdAt).getTime();
+        return Math.abs(aMs - now) - Math.abs(bMs - now);
+      })
+      .slice(0, 10);
+
+    res.json({ success: true, data: sorted });
   } catch (e) {
     console.error(e);
     res.status(500).json({
@@ -323,6 +381,7 @@ activityQrRoutes.get("/activity-qrs", async (req: Request, res: Response) => {
   }
 });
 
+/** 下载图片并自增 downloadCount */
 activityQrRoutes.get(
   "/activity-qrs/:id/image",
   async (req: Request, res: Response) => {
@@ -338,6 +397,11 @@ activityQrRoutes.get(
         });
         return;
       }
+      // 异步自增，不阻塞响应
+      prisma.activityQr
+        .update({ where: { id: req.params.id }, data: { downloadCount: { increment: 1 } } })
+        .catch((e: unknown) => console.error("downloadCount increment failed", e));
+
       res.setHeader("Content-Type", log.mimeType);
       res.setHeader("Cache-Control", "private, max-age=3600");
       res.send(Buffer.from(log.imageBytes));

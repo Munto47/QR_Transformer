@@ -2,6 +2,9 @@ import { api } from "./client";
 import { getAdminToken } from "./authStorage";
 import type { ActivityQr } from "./types";
 
+type HotResp = { success: true; data: ActivityQr[] };
+type SchoolStatsResp = { success: true; data: { activityCount: number; totalDownloads: number } };
+
 export type ActivityQrsResponse = {
   success: true;
   data: ActivityQr[];
@@ -28,6 +31,20 @@ export async function shareActivityQr(params: {
     signInAt: params.signInAt ?? undefined,
     qrPayload: params.qrPayload,
   });
+}
+
+export async function fetchHotActivityQrs(): Promise<ActivityQr[]> {
+  const { data } = await api.get<HotResp>("/activity-qrs/hot");
+  return data.data;
+}
+
+export async function fetchSchoolStats(
+  school: string
+): Promise<{ activityCount: number; totalDownloads: number }> {
+  const { data } = await api.get<SchoolStatsResp>("/activity-qrs/school-stats", {
+    params: { school },
+  });
+  return data.data;
 }
 
 export async function createActivityQr(params: {
