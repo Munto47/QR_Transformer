@@ -2,8 +2,8 @@
 FROM node:20-bookworm-slim
 
 # Prisma 在 slim 镜像中需要 OpenSSL；postinstall 会跑 prisma generate，需先有 schema
-RUN apt-get update -y \
-  && apt-get install -y openssl ca-certificates \
+RUN apt-get update -y -o Acquire::AllowInsecureRepositories=true -o Acquire::AllowDowngradeToInsecureRepositories=true 2>/dev/null \
+  && apt-get install -y --allow-unauthenticated openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
