@@ -16,7 +16,7 @@ import {
   fetchAdminActivityQrs, deleteAdminActivityQr,
   type AdminStats, type AdminLogRow, type AdminActivityRow, type PagedResponse,
 } from "../api/adminDashboard";
-import { SCHOOL_OPTIONS, DEFAULT_ACTIVITY_SCHOOL } from "../constants/schools";
+import { SCHOOL_OPTIONS, DEFAULT_ACTIVITY_SCHOOL, type School } from "../constants/schools";
 
 const THEME_KEY = "qr-transformer-theme";
 function readStoredTheme(): "dark" | "light" {
@@ -354,7 +354,7 @@ function ActivitiesTab() {
             placeholder="搜索活动名称…"
             className="rounded-xl border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm outline-none ring-indigo-500/30 focus:ring-2 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100" />
         </div>
-        <select value={school} onChange={(e) => { setSchool(e.target.value); setPage(1); }}
+        <select value={school} onChange={(e) => { setSchool(e.target.value as School); setPage(1); }}
           className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100">
           <option value="">全部学校</option>
           {SCHOOL_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -495,7 +495,7 @@ function UploadActivityModal({ open, onClose, onSuccess }: { open: boolean; onCl
               ))}
               <div>
                 <label htmlFor="sc" className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">学校</label>
-                <select id="sc" value={school} onChange={(e) => setSchool(e.target.value)}
+                <select id="sc" value={school} onChange={(e) => setSchool(e.target.value as School)}
                   className="mt-1.5 h-9 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-100">
                   {SCHOOL_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
